@@ -9,6 +9,7 @@
 Adafruit_SSD1306 display(OLED_RESET);
 byte xnumberpos = 0;
 
+boolean binputstr = false;
 boolean larm;
 byte codestring[5]={0,0,0,0,0}, inputstring[4]={0,0,0,0};
 byte pos;
@@ -110,24 +111,78 @@ void loop()
       case 'C':
         display.clearDisplay();
         display.setCursor(0, 0);
-        display.println("Ny kod:");
+        display.println("Gammal kod");
         display.display();
-        starttime = millis();
+        binputstr = false;
         pos = 1;
         addr = 1;
         xnumberpos = 0;
-        while (millis() - starttime < 3000) {
+        for(int i=0;i<4;i++) {
+          inputstring[i] = '*';
+        }
+        starttime = millis();
+        while (millis() - starttime < 4000) {
           char key = kpd.getKey();          
-          if((key >= '0' or key <= '9') && pos < 5) {
+          if((key=='0' or key=='1' or key=='2' or key=='3' or key=='4' or key=='5' or key=='6' or key=='7' or key=='8' or key=='9') && (pos < 5)) {
             display.setCursor(xnumberpos, 20);  
             display.println(key);
-            display.display();     
+            Serial.print(key);
             inputstring[pos] = key;
+            display.display();     
             xnumberpos = xnumberpos + 20;
             pos++;
-            delay(1000);
+          }
+          if(inputstring[1] == EEPROM.read(addr+0)+'0' &&
+             inputstring[2] == EEPROM.read(addr+1)+'0' &&
+             inputstring[3] == EEPROM.read(addr+2)+'0' &&
+             inputstring[4] == EEPROM.read(addr+3)+'0') {
+            binputstr = true;
           }
         }
+        
+        Serial.print(inputstring[pos+0]);
+        Serial.print(inputstring[pos+1]);
+        Serial.print(inputstring[pos+2]);
+        Serial.print(inputstring[pos+3]);
+        Serial.print(" pos=");
+        Serial.println(pos);
+        Serial.println(" binputstr=");
+        Serial.println(binputstr);
+        delay(2000);
+        
+        if(binputstr) {
+          display.clearDisplay();
+          display.setCursor(0, 0);
+          display.println("Ny kod");
+          display.display();
+          pos = 1;
+          xnumberpos = 0;
+          starttime = millis();      
+          while (millis() - starttime < 4000) {
+            char key = kpd.getKey();          
+             if((key=='0' or key=='1' or key=='2' or key=='3' or key=='4' or key=='5' or key=='6' or key=='7' or key=='8' or key=='9') && (pos < 5)) {
+              display.setCursor(xnumberpos, 20);  
+              display.println(key);
+              inputstring[pos] = key;
+              Serial.print(key);
+              display.display();     
+              xnumberpos = xnumberpos + 20;
+              pos++;
+            }         
+          }
+          if (pos == 5) {
+            EEPROM.write(addr+0,key);
+            EEPROM.write(addr+1,key);
+            EEPROM.write(addr+2,key);
+            EEPROM.write(addr+3,key);
+            codestring[1] = inputstring[1]-'0';
+            codestring[2] = inputstring[2]-'0';
+            codestring[3] = inputstring[3]-'0';
+            codestring[4] = inputstring[4]-'0';
+          }     
+        
+        }  
+        
         pos = 1;
         Serial.print(inputstring[pos+0]);
         Serial.print(inputstring[pos+1]);
@@ -135,6 +190,8 @@ void loop()
         Serial.print(inputstring[pos+3]);
         Serial.print(" pos=");
         Serial.println(pos);
+        Serial.println(" binputstr=");
+        Serial.println(binputstr);
         delay(2000);
         displaywrite();
         break;
