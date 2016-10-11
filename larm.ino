@@ -5,10 +5,12 @@
 #include <Adafruit_SSD1306.h>
 #include <EEPROM.h>
 
+// Display
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
 byte xnumberpos = 0;
 
+// Pin Code
 boolean binputstr = false;
 boolean larm;
 byte codestring[5]={0,0,0,0,0}, inputstring[4]={0,0,0,0};
@@ -16,6 +18,7 @@ byte pos;
 byte addr;
 unsigned long starttime;
 
+// Keypad
 const byte ROWS = 4; // Four rows
 const byte COLS = 4; // Four columns
 // Define the Keymap
@@ -32,6 +35,7 @@ byte colPins[COLS] = { 12, 11, 10, 9 };
 // Create the Keypad
 Keypad kpd = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
+// LED diodes
 #define larmonpin 3
 #define larmoffpin 4
 
@@ -43,10 +47,7 @@ void setup()
   pos = 1;
   addr = 1;
 
-  Serial.begin(9600);
-
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(WHITE);
@@ -55,14 +56,6 @@ void setup()
   codestring[pos+1] = EEPROM.read(addr+1);
   codestring[pos+2] = EEPROM.read(addr+2);
   codestring[pos+3] = EEPROM.read(addr+3);
-
-  Serial.print(codestring[pos+0]);
-  Serial.print(codestring[pos+1]);
-  Serial.print(codestring[pos+2]);
-  Serial.print(codestring[pos+3]);
-  Serial.print(" pos=");
-  Serial.println(pos);
-  
   displaywrite();
 }
 
@@ -73,6 +66,7 @@ void loop()
   {
     switch (key)
     {
+      // Test LED
       case '*':
         display.clearDisplay();
         display.setCursor(0, 0);
@@ -84,6 +78,7 @@ void loop()
         delay(2000);
         displaywrite();        
         break;
+      // Test Display
       case '#':
         display.clearDisplay();
         display.setCursor(0, 0);
@@ -97,17 +92,20 @@ void loop()
         delay(2000);
         displaywrite();        
         break;
+      // Activate Larm
       case 'A':
         larm = true;
         displaywrite();
         xnumberpos = 0;
         pos = 1;
         break;
+      // Clear Display
       case 'B':
         displaywrite();
         xnumberpos = 0;
         pos = 1;
         break;
+      // Change Code
       case 'C':
         display.clearDisplay();
         display.setCursor(0, 0);
@@ -121,17 +119,18 @@ void loop()
           inputstring[i] = '*';
         }
         starttime = millis();
+        // Input old code
         while (millis() - starttime < 4000) {
           char key = kpd.getKey();          
           if((key=='0' or key=='1' or key=='2' or key=='3' or key=='4' or key=='5' or key=='6' or key=='7' or key=='8' or key=='9') && (pos < 5)) {
             display.setCursor(xnumberpos, 20);  
             display.println(key);
-            Serial.print(key);
             inputstring[pos] = key;
             display.display();     
             xnumberpos = xnumberpos + 20;
             pos++;
           }
+          // Check old code valid
           if(inputstring[1] == EEPROM.read(addr+0)+'0' &&
              inputstring[2] == EEPROM.read(addr+1)+'0' &&
              inputstring[3] == EEPROM.read(addr+2)+'0' &&
@@ -139,62 +138,60 @@ void loop()
             binputstr = true;
           }
         }
-        
-        Serial.print(inputstring[pos+0]);
-        Serial.print(inputstring[pos+1]);
-        Serial.print(inputstring[pos+2]);
-        Serial.print(inputstring[pos+3]);
-        Serial.print(" pos=");
-        Serial.println(pos);
-        Serial.println(" binputstr=");
-        Serial.println(binputstr);
-        delay(2000);
-        
+        // Continue if old code valid       
         if(binputstr) {
+          binputstr = false;
           display.clearDisplay();
           display.setCursor(0, 0);
           display.println("Ny kod");
           display.display();
           pos = 1;
           xnumberpos = 0;
-          starttime = millis();      
+          starttime = millis();
+          // Input new code
           while (millis() - starttime < 4000) {
             char key = kpd.getKey();          
              if((key=='0' or key=='1' or key=='2' or key=='3' or key=='4' or key=='5' or key=='6' or key=='7' or key=='8' or key=='9') && (pos < 5)) {
               display.setCursor(xnumberpos, 20);  
               display.println(key);
               inputstring[pos] = key;
-              Serial.print(key);
               display.display();     
               xnumberpos = xnumberpos + 20;
               pos++;
             }         
           }
+          // Write new code to EEPROM if valid
           if (pos == 5) {
-            EEPROM.write(addr+0,key);
-            EEPROM.write(addr+1,key);
-            EEPROM.write(addr+2,key);
-            EEPROM.write(addr+3,key);
+            EEPROM.write(addr+0,inputstring[1]-'0');
+            EEPROM.write(addr+1,inputstring[2]-'0');
+            EEPROM.write(addr+2,inputstring[3]-'0');
+            EEPROM.write(addr+3,inputstring[4]-'0');
             codestring[1] = inputstring[1]-'0';
             codestring[2] = inputstring[2]-'0';
             codestring[3] = inputstring[3]-'0';
             codestring[4] = inputstring[4]-'0';
-          }     
-        
-        }  
-        
+            display.clearDisplay();
+            display.setCursor(0, 0);
+            display.println("Ny kod");
+            display.println("lagrad");
+            display.display();
+            delay(2000);
+            displaywrite();
+          } else {
+            // Restore old code if new code invalid
+            display.clearDisplay();
+            display.setCursor(0, 0);
+            display.println("Gammal kod");
+            display.println("kvar");
+            display.display();
+            delay(2000);   
+            displaywrite(); 
+          }  
+        }
         pos = 1;
-        Serial.print(inputstring[pos+0]);
-        Serial.print(inputstring[pos+1]);
-        Serial.print(inputstring[pos+2]);
-        Serial.print(inputstring[pos+3]);
-        Serial.print(" pos=");
-        Serial.println(pos);
-        Serial.println(" binputstr=");
-        Serial.println(binputstr);
-        delay(2000);
         displaywrite();
         break;
+      // Factory Reset
       case 'D':
         display.clearDisplay();
         display.setCursor(0, 0);
@@ -217,14 +214,6 @@ void loop()
             codestring[pos+1] = EEPROM.read(addr+1);
             codestring[pos+2] = EEPROM.read(addr+2);
             codestring[pos+3] = EEPROM.read(addr+3);
-          
-            Serial.print(codestring[pos+0]);
-            Serial.print(codestring[pos+1]);
-            Serial.print(codestring[pos+2]);
-            Serial.print(codestring[pos+3]);
-            Serial.print(" pos=");
-            Serial.println(pos);
-  
             break;
           }
           if (key == 'B') {
@@ -235,17 +224,15 @@ void loop()
         xnumberpos = 0;
         pos = 1;
         break;    
+      // Input code
       default:
         if(pos < 5) {    
           if(pos == 1) {
             starttime = millis();
           }
           display.setCursor(xnumberpos, 20);  
-          display.println(key);
+          display.println('*');
           inputstring[pos] = key;
-          Serial.print(pos);
-          Serial.print(codestring[pos]+'0');
-          Serial.println(inputstring[pos]);                   
           display.display();
           if(pos == 4 && larm) {        
             if(codestring[1]+'0' == inputstring[1] &&
@@ -263,6 +250,7 @@ void loop()
         break;
     }
   }
+  // Clear displsy if input code not entered within specified time
   if(millis() - starttime > 4000) {
     displaywrite();
     xnumberpos = 0;
@@ -271,6 +259,7 @@ void loop()
   }
 }
 
+// Write default display text
 void displaywrite()
 {
   display.clearDisplay();
