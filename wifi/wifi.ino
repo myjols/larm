@@ -7,13 +7,13 @@ SoftwareSerial esp8266(2,3); // make RX Arduino line is pin 2, make TX Arduino l
                              // and the RX line from the esp to the Arduino's pin 3
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(9600);
   esp8266.begin(115200); // your esp's baud rate might be different
   
  
   
   sendData("AT+RST\r\n",2000,DEBUG); // reset module
-  sendData("AT+CWMODE=2\r\n",1000,DEBUG); // configure as access point
+  sendData("AT+CWMODE=3\r\n",1000,DEBUG); // configure as STA and AP
   sendData("AT+CIFSR\r\n",1000,DEBUG); // get ip address
   sendData("AT+CIPMUX=1\r\n",1000,DEBUG); // configure for multiple connections
   sendData("AT+CIPSERVER=1,80\r\n",1000,DEBUG); // turn on server on port 80
