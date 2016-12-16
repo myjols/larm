@@ -36,7 +36,7 @@ byte colPins[COLS] = { 12, 11, 10, 9 };
 Keypad kpd = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 // LED diodes
-#define larmonpin 3
+#define larmonpin 13
 #define larmoffpin 4
 
 void setup()
@@ -240,7 +240,8 @@ void loop()
                codestring[3]+'0' == inputstring[3] &&
                codestring[4]+'0' == inputstring[4]) {
               larm = false;
-              pos = 1;
+              pos = 0;
+              xnumberpos = -20;
               displaywrite();
             }
           }
