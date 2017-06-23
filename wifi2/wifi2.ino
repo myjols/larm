@@ -96,7 +96,7 @@ void wifi_init()
       if(!No_IP)
       {
         Serial.println("Connecting Wifi....");
-        connect_wifi("AT+CWJAP=\"ZyXEL\",\"LUoOJ2sharp\"",7000);         //provide your WiFi username and password here
+        connect_wifi("AT+CWJAP=\"SkyNet\",\"LUoOJ2sharp\"",7000);         //provide your WiFi username and password here
      // connect_wifi("AT+CWJAP=\"vpn address\",\"wireless network\"",7000);
       }
       else
