@@ -175,7 +175,7 @@ void Send()
       sendwebdata(webpage);
       delay(1000);
      webpage = "<a href='http://circuitdigest.com/'";
-     webpage+="\">Click Here for More projects</a>";
+     webpage+="\">Click Here for More projects to see</a>";
      sendwebdata(webpage);
      client.println("AT+CIPCLOSE=0"); 
 }
