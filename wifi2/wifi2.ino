@@ -179,4 +179,3 @@ void Send()
      sendwebdata(webpage);
      client.println("AT+CIPCLOSE=0"); 
 }
-
