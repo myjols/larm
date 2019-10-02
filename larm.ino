@@ -13,9 +13,10 @@ byte xnumberpos = 0;
 // Pin Code
 boolean binputstr = false;
 boolean larm;
-byte codestring[5]={0,0,0,0,0}, inputstring[4]={0,0,0,0};
+byte codestring[5]={0,0,0,0,0};
+byte inputstring[4]={0,0,0,0};
+byte address;
 byte pos;
-byte addr;
 unsigned long starttime;
 
 // Keypad
@@ -29,15 +30,15 @@ char keys[ROWS][COLS] = {
   {'*', '0', '#', 'D'}
 };
 // Connect keypad ROW0, ROW1, ROW2 and ROW3 to these Arduino pins.
-byte rowPins[ROWS] = { 8, 7, 6, 5 };
+byte rowPins[ROWS] = { 28, 26, 24, 22 };
 // Connect keypad COL0, COL1, COL2 and COL3 to these Arduino pins.
-byte colPins[COLS] = { 12, 11, 10, 9 };
+byte colPins[COLS] = { 36, 34, 32, 30 };
 // Create the Keypad
 Keypad kpd = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 // LED diodes
-#define larmonpin 13
-#define larmoffpin 4
+#define larmonpin 38
+#define larmoffpin 40
 
 void setup()
 {
@@ -45,18 +46,20 @@ void setup()
   pinMode(larmoffpin, OUTPUT);
   larm = false;
   pos = 1;
-  addr = 1;
+  address = 0;
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
-  display.setTextSize(2);
+  display.setTextSize(1);
   display.setTextColor(WHITE);
   
-  codestring[pos+0] = EEPROM.read(addr+0);
-  codestring[pos+1] = EEPROM.read(addr+1);
-  codestring[pos+2] = EEPROM.read(addr+2);
-  codestring[pos+3] = EEPROM.read(addr+3);
+  codestring[pos+0] = EEPROM.read(address+0);
+  codestring[pos+1] = EEPROM.read(address+1);
+  codestring[pos+2] = EEPROM.read(address+2);
+  codestring[pos+3] = EEPROM.read(address+3);
   displaywrite();
+
+  Serial.begin(9600);
 }
 
 void loop()
@@ -113,15 +116,12 @@ void loop()
         display.display();
         binputstr = false;
         pos = 1;
-        addr = 1;
+        address = 0;
         xnumberpos = 0;
-        for(int i=0;i<4;i++) {
-          inputstring[i] = '*';
-        }
         starttime = millis();
         // Input old code
         while (millis() - starttime < 4000) {
-          char key = kpd.getKey();          
+          char key = kpd.getKey();         
           if((key=='0' or key=='1' or key=='2' or key=='3' or key=='4' or key=='5' or key=='6' or key=='7' or key=='8' or key=='9') && (pos < 5)) {
             display.setCursor(xnumberpos, 20);  
             display.println(key);
@@ -130,13 +130,13 @@ void loop()
             xnumberpos = xnumberpos + 20;
             pos++;
           }
-          // Check old code valid
-          if(inputstring[1] == EEPROM.read(addr+0)+'0' &&
-             inputstring[2] == EEPROM.read(addr+1)+'0' &&
-             inputstring[3] == EEPROM.read(addr+2)+'0' &&
-             inputstring[4] == EEPROM.read(addr+3)+'0') {
-            binputstr = true;
-          }
+        }
+        // Check old code valid
+        if(inputstring[1] == EEPROM.read(address+0)+'0' &&
+           inputstring[2] == EEPROM.read(address+1)+'0' &&
+           inputstring[3] == EEPROM.read(address+2)+'0' &&
+           inputstring[4] == EEPROM.read(address+3)+'0') {
+          binputstr = true;
         }
         // Continue if old code valid       
         if(binputstr) {
@@ -162,10 +162,10 @@ void loop()
           }
           // Write new code to EEPROM if valid
           if (pos == 5) {
-            EEPROM.write(addr+0,inputstring[1]-'0');
-            EEPROM.write(addr+1,inputstring[2]-'0');
-            EEPROM.write(addr+2,inputstring[3]-'0');
-            EEPROM.write(addr+3,inputstring[4]-'0');
+            EEPROM.write(address+0,inputstring[1]-'0');
+            EEPROM.write(address+1,inputstring[2]-'0');
+            EEPROM.write(address+2,inputstring[3]-'0');
+            EEPROM.write(address+3,inputstring[4]-'0');
             codestring[1] = inputstring[1]-'0';
             codestring[2] = inputstring[2]-'0';
             codestring[3] = inputstring[3]-'0';
@@ -203,17 +203,23 @@ void loop()
         while (millis() - starttime < 3000) {
           char key = kpd.getKey();
           if (key == 'A') {
-            addr = 1;
+            address = 0;
             pos = 1;
-            EEPROM.write(addr+0,1);
-            EEPROM.write(addr+1,2);
-            EEPROM.write(addr+2,5);
-            EEPROM.write(addr+3,1);
+            EEPROM.write(address+0,1);
+            EEPROM.write(address+1,2);
+            EEPROM.write(address+2,5);
+            EEPROM.write(address+3,1);
            
-            codestring[pos+0] = EEPROM.read(addr+0);
-            codestring[pos+1] = EEPROM.read(addr+1);
-            codestring[pos+2] = EEPROM.read(addr+2);
-            codestring[pos+3] = EEPROM.read(addr+3);
+            codestring[pos+0] = EEPROM.read(address+0);
+            codestring[pos+1] = EEPROM.read(address+1);
+            codestring[pos+2] = EEPROM.read(address+2);
+            codestring[pos+3] = EEPROM.read(address+3);
+            display.clearDisplay();
+            display.setCursor(0, 0);
+            display.println("Fabrikskod");
+            display.println("giltig");
+            display.display();
+            delay(2000);
             break;
           }
           if (key == 'B') {
@@ -251,7 +257,7 @@ void loop()
         break;
     }
   }
-  // Clear displsy if input code not entered within specified time
+  // Clear display if input code not entered within specified time
   if(millis() - starttime > 4000) {
     displaywrite();
     xnumberpos = 0;
@@ -266,7 +272,6 @@ void displaywrite()
   display.clearDisplay();
   display.setCursor(0, 0);
   display.println("Larm redo");
-  display.setCursor(0, 50);
   if(larm) {
     display.println("Larmat");
     digitalWrite(larmonpin, HIGH);
